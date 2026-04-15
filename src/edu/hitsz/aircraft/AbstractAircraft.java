@@ -10,7 +10,7 @@ import java.util.List;
  */
 public abstract class AbstractAircraft extends AbstractFlyingObject {
 
-    //最大生命值
+    // 最大生命值
     protected int maxHp;
     protected int hp;
 
@@ -22,9 +22,26 @@ public abstract class AbstractAircraft extends AbstractFlyingObject {
 
     public void decreaseHp(int decrease){
         hp -= decrease;
-        if(hp <= 0){
-            hp=0;
+        if (hp <= 0) {
+            hp = 0;
             vanish();
+        }
+    }
+
+    /**
+     * 增加生命值，且不超过最大生命值
+     */
+    public void increaseHp(int increase) {
+        hp += increase;
+        if (hp > maxHp) {
+            hp = maxHp;
+        }
+    }
+
+    public void setHp(int hp) {
+        this.hp = hp;
+        if (this.hp > maxHp) {
+            this.hp = maxHp;
         }
     }
 
@@ -32,15 +49,16 @@ public abstract class AbstractAircraft extends AbstractFlyingObject {
         return hp;
     }
 
+    public int getMaxHp() {
+        return maxHp;
+    }
 
     /**
      * 飞机射击方法
      * @return
-     *  可射击对象需实现，返回子弹列表
-     *  非可射击对象空实现，返回空列表
+     * 可射击对象需实现，返回子弹列表
+     * 非可射击对象空实现，返回空列表
      */
     public abstract List<BaseBullet> shoot();
 
 }
-
-

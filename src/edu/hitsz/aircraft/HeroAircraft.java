@@ -12,6 +12,36 @@ import java.util.List;
  */
 public class HeroAircraft extends AbstractAircraft {
 
+// ================= 单例部分 =================
+
+    // 唯一实例
+    private static HeroAircraft instance;
+
+    /**
+     * 私有构造方法，禁止外部 new
+     */
+    private HeroAircraft(int locationX, int locationY, int speedX, int speedY, int hp) {
+        super(locationX, locationY, speedX, speedY, hp);
+    }
+
+    /**
+     * 初始化（只调用一次）
+     */
+    public static void init(int locationX, int locationY, int speedX, int speedY, int hp) {
+        if (instance == null) {
+            instance = new HeroAircraft(locationX, locationY, speedX, speedY, hp);
+        }
+    }
+
+    /**
+     * 获取唯一实例
+     */
+    public static HeroAircraft getInstance() {
+        return instance;
+    }
+
+    // ==========================================
+
     //每次射击发射子弹数量
     private int shootNum = 1;
 
@@ -21,9 +51,6 @@ public class HeroAircraft extends AbstractAircraft {
     //子弹射击方向 (向上发射：-1，向下发射：1)
     private int direction = -1;
 
-    public HeroAircraft(int locationX, int locationY, int speedX, int speedY, int hp) {
-        super(locationX, locationY, speedX, speedY, hp);
-    }
 
     @Override
     public void forward() {
