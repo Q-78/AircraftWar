@@ -1,0 +1,25 @@
+@startuml
+title HeroAircraft 单例模式结构图
+
+class AbstractAircraft {
+    + shoot() : List<BaseBullet>
+}
+
+class HeroAircraft {
+    - instance : HeroAircraft
+    - HeroAircraft(locationX:int, locationY:int, speedX:int, speedY:int, hp:int)
+    + init(locationX:int, locationY:int, speedX:int, speedY:int, hp:int) : void
+    + getInstance() : HeroAircraft
+    + shoot() : List<BaseBullet>
+}
+
+AbstractAircraft <|-- HeroAircraft
+
+note right of HeroAircraft
+1. instance 为唯一实例
+2. 构造方法私有
+3. 通过 getInstance() 获取对象
+4. init() 用于首次初始化
+end note
+
+@enduml
