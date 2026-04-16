@@ -8,7 +8,7 @@ import java.awt.image.BufferedImage;
 
 /**
  * 可飞行对象的基类
- * @author hitsz
+ * @author hitsz qhy
  */
 public abstract class AbstractFlyingObject {
 
