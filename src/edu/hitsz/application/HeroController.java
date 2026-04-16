@@ -8,7 +8,7 @@ import java.awt.event.MouseEvent;
 /**
  * 英雄机控制类
  * 监听鼠标，控制英雄机的移动
- * @author hitsz
+ * @author hitsz qhy
  */
 public class HeroController {
     private Game game;

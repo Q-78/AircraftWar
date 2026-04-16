@@ -17,6 +17,7 @@ public abstract class AbstractEnemy extends AbstractAircraft {
 
     public AbstractEnemy(int locationX, int locationY, int speedX, int speedY, int hp) {
         super(locationX, locationY, speedX, speedY, hp);
+        this.direction = 1;
     }
 
     /**
@@ -24,6 +25,19 @@ public abstract class AbstractEnemy extends AbstractAircraft {
      * @return 掉落的道具；若不掉落则返回 null
      */
     public abstract AbstractProp dropProp();
+
+
+    /**
+     * 默认单个掉落；Boss 可重写为多个掉落
+     */
+    public List<AbstractProp> dropProps() {
+        List<AbstractProp> res = new LinkedList<>();
+        AbstractProp prop = dropProp();
+        if (prop != null) {
+            res.add(prop);
+        }
+        return res;
+    }
 
     /**
      * 敌机统一向下飞行
@@ -36,14 +50,6 @@ public abstract class AbstractEnemy extends AbstractAircraft {
         if (locationY >= Main.WINDOW_HEIGHT) {
             vanish();
         }
-    }
-
-    /**
-     * 默认敌机不射击
-     */
-    @Override
-    public List<BaseBullet> shoot() {
-        return new LinkedList<>();
     }
 
 }

@@ -16,7 +16,7 @@ import java.util.concurrent.*;
 
 /**
  * 游戏主面板，游戏启动
- * @author hitsz
+ * @author hitsz qhy
  */
 public class Game extends JPanel {
 
@@ -51,6 +51,10 @@ public class Game extends JPanel {
     //游戏结束标志
     private boolean gameOverFlag = false;
 
+    /** Boss 生成控制 */
+    private final int bossScoreThreshold = 100;
+    private int nextBossScore = bossScoreThreshold;
+
     public Game() {
         HeroAircraft.init(
                 Main.WINDOW_WIDTH / 2,
@@ -68,7 +72,6 @@ public class Game extends JPanel {
         new HeroController(this, heroAircraft);
 
         this.timer = new Timer("game-action-timer", true);
-
     }
 
     /**
@@ -180,16 +183,6 @@ public class Game extends JPanel {
                     if (enemyAircraft.notValid()) {
                         // TODO 获得分数，产生道具补给
                         score += 10;
-//                        // 只有精英敌机坠毁时，才有概率掉落道具
-//                        if (enemyAircraft instanceof elite_Enemy) {
-//                            generateProp(enemyAircraft);
-//                        }
-//                        if (enemyAircraft instanceof AbstractEnemy) {
-//                            AbstractProp prop = ((AbstractEnemy) enemyAircraft).dropProp();
-//                            if (prop != null) {
-//                                props.add(prop);
-//                            }
-//                        }
                         AbstractProp prop = enemyAircraft.dropProp();
                         if (prop != null) {
                             props.add(prop);
@@ -204,34 +197,6 @@ public class Game extends JPanel {
             }
         }
 
-//        // Todo: 我方获得道具，道具生效
-//        for (AbstractProp prop : props) {
-//            if (prop.notValid()) {
-//                continue;
-//            }
-//
-//            if (heroAircraft.crash(prop) || prop.crash(heroAircraft)) {
-//
-//                // 加血道具：恢复一定血量，但不超过最大生命值
-//                if (prop instanceof BloodProp) {
-//                    heroAircraft.increaseHp(30);
-//                }
-//
-//                // 火力道具：打印提示
-//                else if (prop instanceof BulletProp) {
-//                    System.out.println("FireSupplyactive!");
-//                }
-//
-//                // 超级火力道具：打印提示
-//                else if (prop instanceof BulletPlusProp) {
-//                    System.out.println("FirePlusSupplyactive!");
-//                }
-//
-//                // 道具生效后消失
-//                prop.vanish();
-//            }
-//        }
-//    }
         // 我方获得道具，道具生效
         for (AbstractProp prop : props) {
             if (prop.notValid()) {
@@ -254,7 +219,6 @@ public class Game extends JPanel {
         enemyBullets.removeIf(AbstractFlyingObject::notValid);
         heroBullets.removeIf(AbstractFlyingObject::notValid);
         enemyAircrafts.removeIf(AbstractFlyingObject::notValid);
-        // Todo: 删除无效道具
         props.removeIf(AbstractFlyingObject::notValid);
     }
 
@@ -294,8 +258,7 @@ public class Game extends JPanel {
         paintImageWithPositionRevised(g, enemyBullets);
         paintImageWithPositionRevised(g, heroBullets);
         paintImageWithPositionRevised(g, enemyAircrafts);
-
-        // Todo: 绘制道具
+        //绘制道具
         paintImageWithPositionRevised(g, props);
 
         g.drawImage(ImageManager.HERO_IMAGE, heroAircraft.getLocationX() - ImageManager.HERO_IMAGE.getWidth() / 2,
@@ -329,33 +292,24 @@ public class Game extends JPanel {
         g.drawString("LIFE: " + this.heroAircraft.getHp(), x, y);
     }
 
+    private boolean hasBossEnemy() {
+        for (AbstractEnemy enemy : enemyAircrafts) {
+            if (enemy instanceof boss_enemy && !enemy.notValid()) {
+                return true;
+            }
+        }
+        return false;
+    }
 
-//    /**
-//     * 精英敌机坠毁后，以一定概率随机生成一个道具
-//     * 掉落范围：加血道具、火力道具、超级火力道具
-//     */
-//    private void generateProp(AbstractAircraft enemyAircraft) {
-//        // 50% 概率掉落道具
-//        if (Math.random() < 0.5) {
-//            int locationX = enemyAircraft.getLocationX();
-//            int locationY = enemyAircraft.getLocationY();
-//
-//            // 道具向下移动
-//            int speedX = 0;
-//            int speedY = 5;
-//
-//            double rand = Math.random();
-//
-//            if (rand < 0.33) {
-//                props.add(new BloodProp(locationX, locationY, speedX, speedY));
-//            } else if (rand < 0.66) {
-//                props.add(new BulletProp(locationX, locationY, speedX, speedY));
-//            } else {
-//                props.add(new BulletPlusProp(locationX, locationY, speedX, speedY));
-//            }
-//        }
-//    }
     private void enemyGenerateAction() {
+        // 先判断是否生成 Boss
+        if (score >= nextBossScore && !hasBossEnemy()) {
+            EnemyFactory bossFactory = new BossEnemyFactory();
+            enemyAircrafts.add(bossFactory.createEnemy(Main.WINDOW_WIDTH / 2, Main.WINDOW_HEIGHT / 10));
+            nextBossScore += bossScoreThreshold;
+            return;
+        }
+
         if (enemyAircrafts.size() < enemyMaxNumber) {
             int locationX = (int) (Math.random() * (Main.WINDOW_WIDTH - ImageManager.MOB_ENEMY_IMAGE.getWidth()));
             int locationY = (int) (Math.random() * Main.WINDOW_HEIGHT * 0.05);

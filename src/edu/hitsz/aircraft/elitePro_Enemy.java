@@ -4,52 +4,24 @@ import edu.hitsz.bullet.BaseBullet;
 import edu.hitsz.bullet.EnemyBullet;
 import edu.hitsz.prop.AbstractProp;
 import edu.hitsz.prop.PropFactory;
+import edu.hitsz.strategy.ScatterShootStrategy;
+
 import java.util.LinkedList;
 import java.util.List;
 /**
  * 高级精英敌机
+ * 散射
  */
 public class elitePro_Enemy extends AbstractEnemy {
 
     public elitePro_Enemy(int locationX, int locationY, int speedX, int speedY, int hp) {
         super(locationX, locationY, speedX, speedY, hp);
+        this.shootNum = 3;
+        this.power = 25;
+        this.shootStrategy = new ScatterShootStrategy(2);
     }
 
-    @Override
-    public List<BaseBullet> shoot() {
-        List<BaseBullet> res = new LinkedList<>();
 
-        int power = 25;
-
-        // 中间一发：直射向下
-        res.add(new EnemyBullet(
-                this.locationX,
-                this.locationY + 2,
-                0,
-                this.speedY + 6,
-                power
-        ));
-
-        // 左侧一发：左下
-        res.add(new EnemyBullet(
-                this.locationX - 10,
-                this.locationY + 2,
-                -2,
-                this.speedY + 6,
-                power
-        ));
-
-        // 右侧一发：右下
-        res.add(new EnemyBullet(
-                this.locationX + 10,
-                this.locationY + 2,
-                2,
-                this.speedY + 6,
-                power
-        ));
-
-        return res;
-    }
     @Override
     public AbstractProp dropProp() {
         if (Math.random() >= 0.5) {
@@ -74,5 +46,4 @@ public class elitePro_Enemy extends AbstractEnemy {
             return PropFactory.createProp("freeze", locationX, locationY, speedX, speedY);
         }
     }
-
 }

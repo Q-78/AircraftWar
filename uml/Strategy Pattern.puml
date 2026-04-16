@@ -1,0 +1,124 @@
+@startuml
+title 策略模式（Strategy Pattern）——飞机大战弹道系统类图
+
+skinparam classAttributeIconSize 0
+
+package "strategy pattern" {
+
+interface ShootStrategy {
+    +shoot(aircraft: AbstractAircraft) : List<BaseBullet>
+}
+
+class NoShootStrategy {
+    +shoot(aircraft: AbstractAircraft) : List<BaseBullet>
+}
+
+class StraightShootStrategy {
+    -shootNum : int
+    +StraightShootStrategy(shootNum: int)
+    +shoot(aircraft: AbstractAircraft) : List<BaseBullet>
+}
+
+class ScatterShootStrategy {
+    -shootNum : int
+    +ScatterShootStrategy(shootNum: int)
+    +shoot(aircraft: AbstractAircraft) : List<BaseBullet>
+}
+
+class CircleShootStrategy {
+    -shootNum : int
+    +CircleShootStrategy(shootNum: int)
+    +shoot(aircraft: AbstractAircraft) : List<BaseBullet>
+}
+
+abstract class AbstractAircraft {
+    -locationX : int
+    -locationY : int
+    -speedX : int
+    -speedY : int
+    -hp : int
+    -shootNum : int
+    -power : int
+    -direction : int
+    -shootStrategy : ShootStrategy
+    +setShootStrategy(strategy: ShootStrategy) : void
+    +shoot() : List<BaseBullet>
+}
+
+class HeroAircraft {
+    +HeroAircraft(locationX:int, locationY:int, speedX:int, speedY:int, hp:int)
+}
+
+abstract class AbstractEnemy {
+}
+
+class MobEnemy {
+}
+
+class EliteEnemy {
+}
+
+class ElitePlusEnemy {
+}
+
+class AceEnemy {
+}
+
+class BossEnemy {
+}
+
+ShootStrategy <|.. NoShootStrategy
+ShootStrategy <|.. StraightShootStrategy
+ShootStrategy <|.. ScatterShootStrategy
+ShootStrategy <|.. CircleShootStrategy
+
+AbstractAircraft --> ShootStrategy : 持有 / 使用
+AbstractAircraft <|-- HeroAircraft
+AbstractAircraft <|-- AbstractEnemy
+AbstractEnemy <|-- MobEnemy
+AbstractEnemy <|-- EliteEnemy
+AbstractEnemy <|-- ElitePlusEnemy
+AbstractEnemy <|-- AceEnemy
+AbstractEnemy <|-- BossEnemy
+
+note right of HeroAircraft
+初始可设为直射策略
+获得火力道具后切换为散射策略
+获得超级火力道具后切换为环射策略
+end note
+
+note right of MobEnemy
+普通敌机：不发射
+end note
+
+note right of EliteEnemy
+精英敌机：单排直射
+end note
+
+note right of ElitePlusEnemy
+精锐敌机：双排直射
+可通过 StraightShootStrategy(shootNum=2) 表示
+end note
+
+note right of AceEnemy
+王牌敌机：散射
+end note
+
+note right of BossEnemy
+Boss敌机：环射
+单次同时发射20颗子弹
+end note
+
+note bottom of AbstractAircraft
+Context（上下文）：
+通过组合 ShootStrategy 对象，
+在运行时动态切换弹道发射算法
+end note
+
+note bottom of ShootStrategy
+Strategy（抽象策略）：
+定义统一的弹道发射接口
+end note
+
+}
+@enduml
