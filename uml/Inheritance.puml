@@ -1,0 +1,84 @@
+@startuml
+title 飞机大战系统继承关系类图
+
+abstract class AbstractFlyingObject {
+    - locationX : int
+    - locationY : int
+    - speedX : int
+    - speedY : int
+    - valid : boolean
+    + forward() : void
+    + crash(obj) : boolean
+    + vanish() : void
+    + getImage() : BufferedImage
+}
+
+abstract class AbstractAircraft {
+    - hp : int
+    - maxHp : int
+    + decreaseHp(decrease:int) : void
+    + increaseHp(increase:int) : void
+    + getHp() : int
+    + getMaxHp() : int
+    + shoot() : List<BaseBullet>
+}
+
+class HeroAircraft {
+    - instance : HeroAircraft
+    + init(locationX:int, locationY:int, speedX:int, speedY:int, hp:int) : void
+    + getInstance() : HeroAircraft
+    + shoot() : List<BaseBullet>
+}
+
+abstract class AbstractEnemy {
+    + forward() : void
+    + shoot() : List<BaseBullet>
+}
+
+class MobEnemy
+class elite_Enemy
+class elitePlus_Enemy
+class elitePro_Enemy
+class boss_enemy
+
+abstract class BaseBullet {
+    - power : int
+    + forward() : void
+    + getPower() : int
+}
+
+class HeroBullet
+class EnemyBullet
+
+abstract class AbstractProp {
+    + forward() : void
+}
+
+class BloodProp
+class BombProp
+class BulletProp
+class BulletPlusProp
+class FreezeProp
+
+AbstractFlyingObject <|-- AbstractAircraft
+AbstractAircraft <|-- HeroAircraft
+AbstractAircraft <|-- AbstractEnemy
+
+AbstractEnemy <|-- MobEnemy
+AbstractEnemy <|-- elite_Enemy
+AbstractEnemy <|-- elitePlus_Enemy
+AbstractEnemy <|-- elitePro_Enemy
+AbstractEnemy <|-- boss_enemy
+
+AbstractFlyingObject <|-- BaseBullet
+BaseBullet <|-- HeroBullet
+BaseBullet <|-- EnemyBullet
+
+AbstractFlyingObject <|-- AbstractProp
+AbstractProp <|-- BloodProp
+AbstractProp <|-- BombProp
+AbstractProp <|-- BulletProp
+AbstractProp <|-- BulletPlusProp
+AbstractProp <|-- FreezeProp
+
+@enduml

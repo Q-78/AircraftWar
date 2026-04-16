@@ -3,6 +3,9 @@ package edu.hitsz.application;
 import edu.hitsz.aircraft.HeroAircraft;
 import edu.hitsz.aircraft.MobEnemy;
 import edu.hitsz.aircraft.elite_Enemy;
+import edu.hitsz.aircraft.elitePlus_Enemy;
+import edu.hitsz.aircraft.elitePro_Enemy;
+import edu.hitsz.aircraft.boss_enemy;
 
 import edu.hitsz.bullet.EnemyBullet;
 import edu.hitsz.bullet.HeroBullet;
@@ -41,6 +44,9 @@ public class ImageManager {
 
     public static BufferedImage MOB_ENEMY_IMAGE;
     public static BufferedImage ELITE_ENEMY_IMAGE;
+    public static BufferedImage ELITE_PLUS_ENEMY_IMAGE;
+    public static BufferedImage ELITE_PRO_ENEMY_IMAGE;
+    public static BufferedImage BOSS_ENEMY_IMAGE;
 
     // 道具图片
     public static BufferedImage BLOOD_PROP_IMAGE;
@@ -61,6 +67,9 @@ public class ImageManager {
             // 敌机
             MOB_ENEMY_IMAGE = ImageIO.read(new FileInputStream("src/images/mob.png"));
             ELITE_ENEMY_IMAGE = ImageIO.read(new FileInputStream("src/images/elite.png"));
+            ELITE_PLUS_ENEMY_IMAGE = ImageIO.read(new FileInputStream("src/images/elitePlus.png"));
+            ELITE_PRO_ENEMY_IMAGE = ImageIO.read(new FileInputStream("src/images/elitePro.png"));
+            BOSS_ENEMY_IMAGE = ImageIO.read(new FileInputStream("src/images/boss.png"));
 
             // 子弹
             HERO_BULLET_IMAGE = ImageIO.read(new FileInputStream("src/images/bullet_hero.png"));
@@ -81,6 +90,9 @@ public class ImageManager {
             CLASSNAME_IMAGE_MAP.put(HeroAircraft.class.getName(), HERO_IMAGE);
             CLASSNAME_IMAGE_MAP.put(MobEnemy.class.getName(), MOB_ENEMY_IMAGE);
             CLASSNAME_IMAGE_MAP.put(elite_Enemy.class.getName(), ELITE_ENEMY_IMAGE);
+            CLASSNAME_IMAGE_MAP.put(elitePlus_Enemy.class.getName(), ELITE_PLUS_ENEMY_IMAGE);
+            CLASSNAME_IMAGE_MAP.put(elitePro_Enemy.class.getName(), ELITE_PRO_ENEMY_IMAGE);
+            CLASSNAME_IMAGE_MAP.put(boss_enemy.class.getName(), BOSS_ENEMY_IMAGE);
 
             // 子弹
             CLASSNAME_IMAGE_MAP.put(HeroBullet.class.getName(), HERO_BULLET_IMAGE);
