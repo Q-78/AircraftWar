@@ -2,7 +2,8 @@ package edu.hitsz.aircraft;
 
 import edu.hitsz.bullet.BaseBullet;
 import edu.hitsz.bullet.EnemyBullet;
-
+import edu.hitsz.prop.AbstractProp;
+import edu.hitsz.prop.PropFactory;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -21,8 +22,30 @@ public class elite_Enemy extends AbstractEnemy {
     // 子弹射击方向（向下：1）
     private int direction = 1;
 
+
     public elite_Enemy(int locationX, int locationY, int speedX, int speedY, int hp) {
         super(locationX, locationY, speedX, speedY, hp);
+    }
+
+    @Override
+    public AbstractProp dropProp() {
+        if (Math.random() >= 0.5) {
+            return null;
+        }
+
+        int locationX = this.getLocationX();
+        int locationY = this.getLocationY();
+        int speedX = 0;
+        int speedY = 5;
+
+        double rand = Math.random();
+        if (rand < 0.33) {
+            return PropFactory.createProp("blood", locationX, locationY, speedX, speedY);
+        } else if (rand < 0.66) {
+            return PropFactory.createProp("bullet", locationX, locationY, speedX, speedY);
+        } else {
+            return PropFactory.createProp("bulletPlus", locationX, locationY, speedX, speedY);
+        }
     }
 
     @Override

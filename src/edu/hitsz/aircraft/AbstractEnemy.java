@@ -2,6 +2,7 @@ package edu.hitsz.aircraft;
 
 import edu.hitsz.application.Main;
 import edu.hitsz.bullet.BaseBullet;
+import edu.hitsz.prop.AbstractProp;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -17,6 +18,12 @@ public abstract class AbstractEnemy extends AbstractAircraft {
     public AbstractEnemy(int locationX, int locationY, int speedX, int speedY, int hp) {
         super(locationX, locationY, speedX, speedY, hp);
     }
+
+    /**
+     * 敌机死亡后的掉落逻辑
+     * @return 掉落的道具；若不掉落则返回 null
+     */
+    public abstract AbstractProp dropProp();
 
     /**
      * 敌机统一向下飞行

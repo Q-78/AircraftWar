@@ -1,5 +1,7 @@
 package edu.hitsz.prop;
 
+import edu.hitsz.aircraft.HeroAircraft;
+
 /**
  * 冰冻道具
  */
@@ -10,4 +12,8 @@ public class FreezeProp extends AbstractProp {
         super(locationX, locationY, speedX, speedY);
     }
 
+    @Override
+    public void activate(HeroAircraft heroAircraft) {
+        System.out.println("FreezeSupply active!");
+    }
 }

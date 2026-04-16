@@ -1,0 +1,53 @@
+@startuml
+title 简单工厂模式（Simple Factory Pattern）——道具创建
+
+skinparam classAttributeIconSize 0
+
+abstract class AbstractProp {
+    +AbstractProp(locationX:int, locationY:int, speedX:int, speedY:int)
+    +forward(): void
+    +activate(heroAircraft: HeroAircraft): void
+}
+
+class BloodProp {
+    +BloodProp(locationX:int, locationY:int, speedX:int, speedY:int)
+    +activate(heroAircraft: HeroAircraft): void
+}
+
+class BombProp {
+    +BombProp(locationX:int, locationY:int, speedX:int, speedY:int)
+    +activate(heroAircraft: HeroAircraft): void
+}
+
+class BulletProp {
+    +BulletProp(locationX:int, locationY:int, speedX:int, speedY:int)
+    +activate(heroAircraft: HeroAircraft): void
+}
+
+class BulletPlusProp {
+    +BulletPlusProp(locationX:int, locationY:int, speedX:int, speedY:int)
+    +activate(heroAircraft: HeroAircraft): void
+}
+
+class FreezeProp {
+    +FreezeProp(locationX:int, locationY:int, speedX:int, speedY:int)
+    +activate(heroAircraft: HeroAircraft): void
+}
+
+class PropFactory {
+    {static} +createProp(type:String, locationX:int, locationY:int, speedX:int, speedY:int): AbstractProp
+}
+
+abstract class AbstractEnemy {
+    +dropProp(): AbstractProp
+}
+
+AbstractProp <|-- BloodProp
+AbstractProp <|-- BombProp
+AbstractProp <|-- BulletProp
+AbstractProp <|-- BulletPlusProp
+AbstractProp <|-- FreezeProp
+
+PropFactory ..> AbstractProp : 创建
+AbstractEnemy ..> PropFactory : 调用
+@enduml
