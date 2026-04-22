@@ -1,0 +1,49 @@
+@startuml
+title DAO Pattern - Aircraft War Ranking System
+
+skinparam classAttributeIconSize 0
+
+interface ScoreRecordDao {
+    + getAllRecords() : List<ScoreRecord>
+    + addRecord(record : ScoreRecord) : void
+    + deleteRecord(index : int) : void
+}
+
+class ScoreRecord {
+    - playerName : String
+    - score : int
+    - time : String
+    + ScoreRecord(playerName : String, score : int, time : String)
+    + getPlayerName() : String
+    + getScore() : int
+    + getTime() : String
+    + toString() : String
+}
+
+class ScoreRecordDaoImpl {
+    - records : List<ScoreRecord>
+    - filename : String
+    + ScoreRecordDaoImpl(filename : String)
+    - loadFromFile() : void
+    - saveToFile() : void
+    - sortRecords() : void
+    + getAllRecords() : List<ScoreRecord>
+    + addRecord(record : ScoreRecord) : void
+    + deleteRecord(index : int) : void
+}
+
+class Game {
+    - score : int
+    + action() : void
+    - checkResultAction() : void
+    # getDifficultyName() : String
+    - getRecordFileName() : String
+    - saveScoreRecord() : void
+    - printRankList() : void
+}
+
+ScoreRecordDaoImpl ..|> ScoreRecordDao
+ScoreRecordDaoImpl "1" *-- "0..*" ScoreRecord
+Game ..> ScoreRecordDao : use
+Game ..> ScoreRecordDaoImpl : create
+@enduml
