@@ -6,6 +6,12 @@ import edu.hitsz.bullet.BaseBullet;
 import edu.hitsz.basic.AbstractFlyingObject;
 import edu.hitsz.factory.*;
 
+import edu.hitsz.dao.ScoreRecord;
+import edu.hitsz.dao.ScoreRecordDao;
+import edu.hitsz.dao.ScoreRecordDaoImpl;
+
+import java.text.SimpleDateFormat;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -227,12 +233,22 @@ public class Game extends JPanel {
      */
     private void checkResultAction(){
         // 游戏结束检查英雄机是否存活
-        if (heroAircraft.getHp() <= 0) {
-            timer.cancel(); // 取消定时器并终止所有调度任务
+//        if (heroAircraft.getHp() <= 0) {
+//            timer.cancel(); // 取消定时器并终止所有调度任务
+//            gameOverFlag = true;
+//            System.out.println("Game Over!");
+//        }
+        if (heroAircraft.getHp() <= 0 && !gameOverFlag) {
+            timer.cancel();
             gameOverFlag = true;
+
             System.out.println("Game Over!");
+
+            saveScoreRecord();
+            printRankList();
         }
-    };
+
+    }
 
     //***********************
     //      Paint 各部分
@@ -331,7 +347,41 @@ public class Game extends JPanel {
         }
     }
 
+    protected String getDifficultyName() {
+        return "normal";
+    }
 
+    private String getRecordFileName() {
+        return getDifficultyName() + "_records.txt";
+    }
 
+    private void printRankList() {
+        ScoreRecordDao dao = new ScoreRecordDaoImpl(getRecordFileName());
+        List<ScoreRecord> records = dao.getAllRecords();
+
+        System.out.println("***************************************");
+        System.out.println("当前难度：" + getDifficultyName());
+        System.out.println("名次\t玩家名\t得分\t时间");
+
+        for (int i = 0; i < records.size(); i++) {
+            ScoreRecord record = records.get(i);
+            System.out.printf("%d\t%s\t%d\t%s%n",
+                    i + 1,
+                    record.getPlayerName(),
+                    record.getScore(),
+                    record.getTime());
+        }
+
+        System.out.println("***************************************");
+    }
+
+    private void saveScoreRecord() {
+        String playerName = "testUser";
+        String time = new SimpleDateFormat("MM-dd HH:mm").format(new Date());
+
+        ScoreRecord record = new ScoreRecord(playerName, score, time);
+        ScoreRecordDao dao = new ScoreRecordDaoImpl(getRecordFileName());
+        dao.addRecord(record);
+    }
 }
 
