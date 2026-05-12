@@ -2,12 +2,13 @@ package edu.hitsz.bullet;
 
 import edu.hitsz.application.Main;
 import edu.hitsz.basic.AbstractFlyingObject;
+import edu.hitsz.observer.EffectObserver;
 
 /**
  * 子弹基类
  * @author hitsz qhu
  */
-public abstract class BaseBullet extends AbstractFlyingObject {
+public abstract class BaseBullet extends AbstractFlyingObject implements EffectObserver {
 
     private int power = 0;
 
@@ -38,4 +39,27 @@ public abstract class BaseBullet extends AbstractFlyingObject {
     public int getPower() {
         return power;
     }
+
+    @Override
+    public void onBomb() {
+        vanish();
+    }
+
+    @Override
+    public void onFreeze() {
+        final int oldSpeedX = speedX;
+        final int oldSpeedY = speedY;
+        setSpeed(0, 0);
+        new Thread(() -> {
+            try {
+                Thread.sleep(5000);
+                if (!notValid()) {
+                    setSpeed(oldSpeedX, oldSpeedY);
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }, "enemy-bullet-freeze-recover-thread").start();
+    }
 }
+

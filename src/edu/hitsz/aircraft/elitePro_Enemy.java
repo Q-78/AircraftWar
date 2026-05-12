@@ -23,6 +23,18 @@ public class elitePro_Enemy extends AbstractEnemy {
 
 
     @Override
+    public void onBomb() {
+        decreaseHp(50);
+        System.out.println("EliteProEnemy damaged by bomb!");
+    }
+
+    @Override
+    public void onFreeze() {
+        slowTemporarily(0.5, 5000);
+        System.out.println("EliteProEnemy slowed 5s!");
+    }
+
+    @Override
     public AbstractProp dropProp() {
         if (Math.random() >= 0.5) {
             return null;

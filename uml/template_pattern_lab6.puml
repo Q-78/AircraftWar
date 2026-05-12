@@ -1,0 +1,68 @@
+@startuml
+skinparam classAttributeIconSize 0
+title 模板方法模式（Template Method Pattern）- 三种游戏难度
+
+abstract class Game {
+  -timer: Timer
+  #enemyMaxNumber: int
+  #enemySpawnCycle: double
+  #heroShootCycle: double
+  #enemyShootCycle: double
+  #bossScoreThreshold: int
+  #bossBaseHp: int
+  +action(): void <<final template method>>
+  #initDifficultyParameters(): void
+  #increaseDifficultyAction(): void
+  #canGenerateBoss(): boolean
+  #getCurrentBossHp(): int
+  #afterBossGenerated(): void
+}
+
+class EasyGame {
+  #initDifficultyParameters(): void
+  #canGenerateBoss(): boolean
+}
+
+class NormalGame {
+  #initDifficultyParameters(): void
+  #increaseDifficultyAction(): void
+}
+
+class HardGame {
+  -bossHpEnhance: int
+  #initDifficultyParameters(): void
+  #increaseDifficultyAction(): void
+  #getCurrentBossHp(): int
+  #afterBossGenerated(): void
+}
+
+class Main {
+  +launchGame(): void
+}
+
+Game <|-- EasyGame
+Game <|-- NormalGame
+Game <|-- HardGame
+Main ..> Game : creates by difficulty
+
+note right of Game::action
+固定游戏主循环骨架：
+难度递进 -> 敌机生成 -> 射击 -> 移动 ->
+碰撞检测 -> 后处理 -> 重绘 -> 游戏结束检查。
+end note
+
+note bottom of EasyGame
+简单难度：无 Boss，难度不递进。
+end note
+
+note bottom of NormalGame
+普通难度：敌机生成周期、速度、血量递进；
+Boss 血量固定。
+end note
+
+note bottom of HardGame
+困难难度：敌机生成周期、速度、血量、
+英雄射击周期、敌机射击周期递进；
+每次生成 Boss 后提升下一次 Boss 血量。
+end note
+@enduml

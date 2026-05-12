@@ -46,9 +46,34 @@ public class Main {
                 WINDOW_WIDTH, WINDOW_HEIGHT);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        Game game = new Game();
+        Game game;
+        switch (GameConfig.difficulty) {
+            case EASY:
+                game = new EasyGame();
+                break;
+            case HARD:
+                game = new HardGame();
+                break;
+            case NORMAL:
+            default:
+                game = new NormalGame();
+                break;
+        }
         frame.add(game);
         frame.setVisible(true);
         game.action();
     }
+    /**
+     * 打开排行榜窗口。allowRestart 为 true 时，排行榜底部提供“重新选择难度”入口。
+     */
+    public static void showScoreBoard(String difficultyName, boolean allowRestart) {
+        JFrame frame = new JFrame("排行榜");
+        frame.setSize(500, 600);
+        frame.setResizable(false);
+        frame.setLocationRelativeTo(null);
+        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        frame.setContentPane(new ScoreBoard(difficultyName, allowRestart ? Main::showModeChoose : null));
+        frame.setVisible(true);
+    }
+
 }

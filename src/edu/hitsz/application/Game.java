@@ -5,63 +5,79 @@ import edu.hitsz.prop.*;
 import edu.hitsz.bullet.BaseBullet;
 import edu.hitsz.basic.AbstractFlyingObject;
 import edu.hitsz.factory.*;
-
 import edu.hitsz.dao.ScoreRecord;
 import edu.hitsz.dao.ScoreRecordDao;
 import edu.hitsz.dao.ScoreRecordDaoImpl;
 
-import java.text.SimpleDateFormat;
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
-import java.util.Timer;
-import java.util.concurrent.*;
 
 /**
- * 游戏主面板，游戏启动
- * @author hitsz qhy
+ * 游戏主面板。
+ *
+ * 实验六模板方法模式：action() 被重构为 final 模板方法，统一定义游戏主循环骨架；
+ * 简单、普通、困难三个子类只重写难度参数、Boss 控制和难度递进等可变步骤。
  */
-public class Game extends JPanel {
+public abstract class Game extends JPanel {
 
     private int backGroundTop = 0;
 
-    //调度器, 用于定时任务调度
-    private final Timer timer;
-    //时间间隔(ms)，控制刷新频率
-    private final int timeInterval = 40;
+    protected final java.util.Timer timer;
+    protected final int timeInterval = 40;
 
-    private final HeroAircraft heroAircraft;
-    //修改类型使其更精确
-    //private final List<AbstractAircraft> enemyAircrafts;
-    private final List<AbstractEnemy> enemyAircrafts;
-    private final List<BaseBullet> heroBullets;
-    private final List<BaseBullet> enemyBullets;
-    private final List<AbstractProp> props;
-    //屏幕中出现的敌机最大数量
-    private final int enemyMaxNumber = 5;
+    protected final HeroAircraft heroAircraft;
+    protected final List<AbstractEnemy> enemyAircrafts;
+    protected final List<BaseBullet> heroBullets;
+    protected final List<BaseBullet> enemyBullets;
+    protected final List<AbstractProp> props;
 
-    //敌机生成周期
-    protected double enemySpawnCycle  =  20;
+    /** 屏幕中出现的敌机最大数量 */
+    protected int enemyMaxNumber = 5;
+
+    /** 敌机生成周期 */
+    protected double enemySpawnCycle = 20;
     private int enemySpawnCounter = 0;
 
-    //英雄机和敌机射击周期
-    protected double shootCycle = 20;
-    private int shootCounter = 0;
+    /** 英雄机与敌机射击周期，实验六中不同难度可分别调整 */
+    protected double heroShootCycle = 20;
+    protected double enemyShootCycle = 20;
+    private int heroShootCounter = 0;
+    private int enemyShootCounter = 0;
 
-    //当前玩家分数
-    private int score = 0;
+    /** 敌机概率分界线 */
+    protected double mobProbability = 0.4;
+    protected double eliteProbability = 0.3;
+    protected double elitePlusProbability = 0.2;
+    protected double eliteProProbability = 0.1;
 
-    //游戏结束标志
+    /** 随难度递进累加到新生成敌机上的速度和血量 */
+    protected int enemySpeedEnhance = 0;
+    protected int enemyHpEnhance = 0;
+
+    protected int score = 0;
     private boolean gameOverFlag = false;
 
+    /** 暂停状态控制 */
+    private volatile boolean paused = false;
+    private JButton pauseButton;
+
     /** Boss 生成控制 */
-    private final int bossScoreThreshold = 100;
-    private int nextBossScore = bossScoreThreshold;
+    protected int bossScoreThreshold = 100;
+    protected int nextBossScore = bossScoreThreshold;
+    protected int bossBaseHp = 200;
+
+    /** 难度递进计时 */
+    protected int difficultyStepCounter = 0;
+    protected int difficultyStepCycle = 500;
+    protected int difficultyLevel = 0;
 
     public Game() {
+        initDifficultyParameters();
+
         HeroAircraft.init(
                 Main.WINDOW_WIDTH / 2,
                 Main.WINDOW_HEIGHT - ImageManager.HERO_IMAGE.getHeight(),
@@ -74,62 +90,123 @@ public class Game extends JPanel {
         enemyBullets = new LinkedList<>();
         props = new LinkedList<>();
 
-        //启动英雄机鼠标监听
         new HeroController(this, heroAircraft);
+        this.timer = new java.util.Timer("game-action-timer", true);
 
-        this.timer = new Timer("game-action-timer", true);
+        initPauseControls();
     }
 
     /**
-     * 游戏启动入口，执行游戏逻辑
+     * 模板方法：定义游戏每一帧的固定算法骨架。
+     * 子类通过 initDifficultyParameters、increaseDifficultyAction、canGenerateBoss、
+     * getCurrentBossHp 等钩子/抽象步骤实现差异化难度。
      */
-    public void action() {
-
+    public final void action() {
         MusicManager.playBgm();
 
-        // 定时任务：绘制、对象产生、碰撞判定、及结束判定
         TimerTask task = new TimerTask() {
             @Override
             public void run() {
-
-                enemySpawnCounter++;
-                if (enemySpawnCounter >= enemySpawnCycle) {
-                    enemySpawnCounter = 0;
-                    enemyGenerateAction();
+                if (paused) {
+                    repaint();
+                    return;
                 }
 
-                // 飞机发射子弹
+                increaseDifficultyAction();
+                enemyGenerateAction();
                 shootAction();
-                // 子弹移动
                 bulletsMoveAction();
-                // 飞机移动
                 aircraftsMoveAction();
-                // 撞击检测
                 crashCheckAction();
-                // 后处理
                 postProcessAction();
-                // 重绘界面
                 repaint();
-                // 游戏结束检查
                 checkResultAction();
             }
         };
-        // 以固定延迟时间进行执行：本次任务执行完成后，延迟 timeInterval 再执行下一次
-        timer.schedule(task,0,timeInterval);
-
+        timer.schedule(task, 0, timeInterval);
     }
 
-    //***********************
-    //      Action 各部分
-    //***********************
+    /** 初始化暂停按钮和快捷键。 */
+    private void initPauseControls() {
+        setLayout(null);
+        setFocusable(true);
+
+        pauseButton = new JButton("暂停");
+        pauseButton.setBounds(Main.WINDOW_WIDTH - 95, 12, 80, 32);
+        pauseButton.setFocusPainted(false);
+        pauseButton.addActionListener(e -> togglePause());
+        add(pauseButton);
+
+        getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("P"), "togglePause");
+        getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("SPACE"), "togglePause");
+        getActionMap().put("togglePause", new AbstractAction() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent e) {
+                togglePause();
+            }
+        });
+    }
+
+    /** 暂停/继续游戏：暂停期间主循环不再推进，鼠标拖动也不会移动英雄机。 */
+    public void togglePause() {
+        if (gameOverFlag) {
+            return;
+        }
+        paused = !paused;
+        pauseButton.setText(paused ? "继续" : "暂停");
+        if (paused) {
+            MusicManager.stopAll();
+            System.out.println("Game paused. Press P/Space or click 继续 to resume.");
+        } else {
+            if (hasBossEnemy()) {
+                MusicManager.playBossBgm();
+            } else {
+                MusicManager.playBgm();
+            }
+            System.out.println("Game resumed.");
+        }
+        repaint();
+        requestFocusInWindow();
+    }
+
+    public boolean isPaused() {
+        return paused;
+    }
+
+    /** 初始化该难度的参数，具体难度子类实现。 */
+    protected abstract void initDifficultyParameters();
+
+    /** 难度递进钩子：简单模式默认不递进，普通/困难重写。 */
+    protected void increaseDifficultyAction() {
+        // default: no difficulty increase
+    }
+
+    /** Boss 生成钩子：简单模式返回 false。 */
+    protected boolean canGenerateBoss() {
+        return true;
+    }
+
+    /** Boss 血量钩子：普通固定，困难递增。 */
+    protected int getCurrentBossHp() {
+        return bossBaseHp;
+    }
+
+    /** Boss 生成后钩子：困难模式可提升下一次 Boss 血量。 */
+    protected void afterBossGenerated() {
+        // default: no extra operation
+    }
 
     private void shootAction() {
-        shootCounter++;
-        if (shootCounter >= shootCycle) {
-            shootCounter = 0;
-            //英雄机射击
+        heroShootCounter++;
+        enemyShootCounter++;
+
+        if (heroShootCounter >= heroShootCycle) {
+            heroShootCounter = 0;
             heroBullets.addAll(heroAircraft.shoot());
-            // TODO 敌机射击
+        }
+
+        if (enemyShootCounter >= enemyShootCycle) {
+            enemyShootCounter = 0;
             for (AbstractEnemy enemyAircraft : enemyAircrafts) {
                 enemyBullets.addAll(enemyAircraft.shoot());
             }
@@ -154,15 +231,8 @@ public class Game extends JPanel {
         }
     }
 
-
-    /**
-     * 碰撞检测：
-     * 1. 敌机攻击英雄
-     * 2. 英雄攻击/撞击敌机
-     * 3. 英雄获得补给
-     */
     private void crashCheckAction() {
-        // TODO 敌机子弹攻击英雄机
+        // 敌机子弹攻击英雄机
         for (BaseBullet bullet : enemyBullets) {
             if (bullet.notValid()) {
                 continue;
@@ -172,6 +242,7 @@ public class Game extends JPanel {
                 bullet.vanish();
             }
         }
+
         // 英雄子弹攻击敌机
         for (BaseBullet bullet : heroBullets) {
             if (bullet.notValid()) {
@@ -179,55 +250,76 @@ public class Game extends JPanel {
             }
             for (AbstractEnemy enemyAircraft : enemyAircrafts) {
                 if (enemyAircraft.notValid()) {
-                    // 已被其他子弹击毁的敌机，不再检测
-                    // 避免多个子弹重复击毁同一敌机的判定
                     continue;
                 }
                 if (enemyAircraft.crash(bullet)) {
-                    // 敌机撞击到英雄机子弹
-                    // 敌机损失一定生命值
                     enemyAircraft.decreaseHp(bullet.getPower());
                     bullet.vanish();
                     MusicManager.playBulletHit();
                     if (enemyAircraft.notValid()) {
-                        // TODO 获得分数，产生道具补给
-                        score += 10;
-                        AbstractProp prop = enemyAircraft.dropProp();
-                        if (prop != null) {
-                            props.add(prop);
-                        }
+                        score += enemyAircraft.getScoreValue();
+                        props.addAll(enemyAircraft.dropProps());
                     }
                 }
-                // 英雄机 与 敌机 相撞，均损毁
-                if (enemyAircraft.crash(heroAircraft) || heroAircraft.crash(enemyAircraft)) {
+                if (!enemyAircraft.notValid()
+                        && (enemyAircraft.crash(heroAircraft) || heroAircraft.crash(enemyAircraft))) {
                     enemyAircraft.vanish();
                     heroAircraft.decreaseHp(Integer.MAX_VALUE);
                 }
             }
         }
 
-        // 我方获得道具，道具生效
+        // 英雄机获得道具，道具生效
         for (AbstractProp prop : props) {
             if (prop.notValid()) {
                 continue;
             }
-
             if (heroAircraft.crash(prop) || prop.crash(heroAircraft)) {
                 MusicManager.playGetSupply();
+
+                if (prop instanceof BombProp || prop instanceof FreezeProp) {
+                    registerPropObservers(prop);
+                }
+
                 if (prop instanceof BombProp) {
                     MusicManager.playBombExplosion();
+                    activateBombAndAddScore((BombProp) prop);
+                } else {
+                    prop.activate(heroAircraft);
                 }
-                prop.activate(heroAircraft);
                 prop.vanish();
             }
         }
     }
-    /**
-     * 后处理：
-     * 1. 删除无效的子弹
-     * 2. 删除无效的敌机
-     * 3. 删除无效的道具
-     */
+
+    private void registerPropObservers(AbstractProp prop) {
+        for (AbstractEnemy enemy : enemyAircrafts) {
+            if (!enemy.notValid()) {
+                prop.addObserver(enemy);
+            }
+        }
+        for (BaseBullet bullet : enemyBullets) {
+            if (!bullet.notValid()) {
+                prop.addObserver(bullet);
+            }
+        }
+    }
+
+    private void activateBombAndAddScore(BombProp bombProp) {
+        Map<AbstractEnemy, Boolean> aliveBefore = new HashMap<>();
+        for (AbstractEnemy enemy : enemyAircrafts) {
+            aliveBefore.put(enemy, !enemy.notValid());
+        }
+
+        bombProp.activate(heroAircraft);
+
+        for (AbstractEnemy enemy : enemyAircrafts) {
+            if (aliveBefore.getOrDefault(enemy, false) && enemy.notValid()) {
+                score += enemy.getScoreValue();
+            }
+        }
+    }
+
     private void postProcessAction() {
         boolean hadBoss = hasBossEnemy();
 
@@ -238,13 +330,11 @@ public class Game extends JPanel {
 
         if (hadBoss && !hasBossEnemy()) {
             MusicManager.stopBossBgm();
+            MusicManager.playBgm();
         }
     }
 
-    /**
-     * 检查游戏是否结束，若结束：关闭线程池
-     */
-    private void checkResultAction(){
+    private void checkResultAction() {
         if (heroAircraft.getHp() <= 0 && !gameOverFlag) {
             timer.cancel();
             gameOverFlag = true;
@@ -253,26 +343,39 @@ public class Game extends JPanel {
             MusicManager.stopAll();
             MusicManager.playGameOver();
 
-            SwingUtilities.invokeLater(() -> {
-                saveScoreRecord();
-                showScoreBoard();
-            });
+            showGameOverUiSmoothly();
         }
-
     }
 
-    //***********************
-    //      Paint 各部分
-    //***********************
     /**
-     * 重写 paint方法
-     * 通过重复调用paint方法，实现游戏动画
+     * 游戏结束后的保存成绩与排行榜显示统一交给 Swing 事件线程处理。
+     * 使用短延时的 Swing Timer，而不是 invokeAndWait，避免游戏计时线程和 EDT 相互等待造成卡顿。
      */
+    private void showGameOverUiSmoothly() {
+        SwingUtilities.invokeLater(() -> {
+            javax.swing.Timer dialogTimer = new javax.swing.Timer(120, e -> {
+                ((javax.swing.Timer) e.getSource()).stop();
+                saveScoreRecord();
+                closeGameWindow();
+                showScoreBoard();
+            });
+            dialogTimer.setRepeats(false);
+            dialogTimer.start();
+        });
+    }
+
+    /** 关闭当前游戏窗口，避免重新开始后残留旧窗口。 */
+    private void closeGameWindow() {
+        Window window = SwingUtilities.getWindowAncestor(this);
+        if (window != null) {
+            window.dispose();
+        }
+    }
+
     @Override
     public void paint(Graphics g) {
-        super.paint(g);
+        super.paintComponent(g);
 
-        // 绘制背景,图片滚动
         BufferedImage bg = getBackgroundImage();
         g.drawImage(bg, 0, this.backGroundTop - Main.WINDOW_HEIGHT, null);
         g.drawImage(bg, 0, this.backGroundTop, null);
@@ -281,27 +384,46 @@ public class Game extends JPanel {
             this.backGroundTop = 0;
         }
 
-        // 先绘制子弹，后绘制飞机
-        // 这样子弹显示在飞机的下层
         paintImageWithPositionRevised(g, enemyBullets);
         paintImageWithPositionRevised(g, heroBullets);
         paintImageWithPositionRevised(g, enemyAircrafts);
-        //绘制道具
         paintImageWithPositionRevised(g, props);
 
-        g.drawImage(ImageManager.HERO_IMAGE, heroAircraft.getLocationX() - ImageManager.HERO_IMAGE.getWidth() / 2,
+        g.drawImage(ImageManager.HERO_IMAGE,
+                heroAircraft.getLocationX() - ImageManager.HERO_IMAGE.getWidth() / 2,
                 heroAircraft.getLocationY() - ImageManager.HERO_IMAGE.getHeight() / 2, null);
 
-        //绘制得分和生命值
         paintScoreAndLife(g);
+        paintPauseHint(g);
 
+        // 最后绘制 Swing 控件，避免暂停按钮被游戏画面覆盖。
+        super.paintChildren(g);
+    }
+
+    private void paintPauseHint(Graphics g) {
+        if (!paused) {
+            return;
+        }
+        Graphics2D g2 = (Graphics2D) g.create();
+        g2.setColor(new Color(0, 0, 0, 150));
+        g2.fillRect(0, 0, Main.WINDOW_WIDTH, Main.WINDOW_HEIGHT);
+        g2.setColor(Color.WHITE);
+        g2.setFont(new Font("SansSerif", Font.BOLD, 36));
+        String title = "游戏暂停";
+        FontMetrics titleMetrics = g2.getFontMetrics();
+        g2.drawString(title, (Main.WINDOW_WIDTH - titleMetrics.stringWidth(title)) / 2, Main.WINDOW_HEIGHT / 2 - 20);
+
+        g2.setFont(new Font("SansSerif", Font.PLAIN, 18));
+        String hint = "按 P / 空格键，或点击右上角按钮继续";
+        FontMetrics hintMetrics = g2.getFontMetrics();
+        g2.drawString(hint, (Main.WINDOW_WIDTH - hintMetrics.stringWidth(hint)) / 2, Main.WINDOW_HEIGHT / 2 + 20);
+        g2.dispose();
     }
 
     private void paintImageWithPositionRevised(Graphics g, List<? extends AbstractFlyingObject> objects) {
         if (objects.isEmpty()) {
             return;
         }
-
         for (AbstractFlyingObject object : objects) {
             BufferedImage image = object.getImage();
             assert image != null : objects.getClass().getName() + " has no image! ";
@@ -320,7 +442,7 @@ public class Game extends JPanel {
         g.drawString("LIFE: " + this.heroAircraft.getHp(), x, y);
     }
 
-    private boolean hasBossEnemy() {
+    protected boolean hasBossEnemy() {
         for (AbstractEnemy enemy : enemyAircrafts) {
             if (enemy instanceof boss_enemy && !enemy.notValid()) {
                 return true;
@@ -330,34 +452,60 @@ public class Game extends JPanel {
     }
 
     private void enemyGenerateAction() {
-        // 先判断是否生成 Boss
-        if (score >= nextBossScore && !hasBossEnemy()) {
-            EnemyFactory bossFactory = new BossEnemyFactory();
-            enemyAircrafts.add(bossFactory.createEnemy(Main.WINDOW_WIDTH / 2, Main.WINDOW_HEIGHT / 10));
+        enemySpawnCounter++;
+        if (enemySpawnCounter < enemySpawnCycle) {
+            return;
+        }
+        enemySpawnCounter = 0;
+
+        if (canGenerateBoss() && score >= nextBossScore && !hasBossEnemy()) {
+            enemyAircrafts.add(createBossEnemy());
+            MusicManager.stopBgm();
             MusicManager.playBossBgm();
             nextBossScore += bossScoreThreshold;
+            afterBossGenerated();
             return;
         }
 
         if (enemyAircrafts.size() < enemyMaxNumber) {
             int locationX = (int) (Math.random() * (Main.WINDOW_WIDTH - ImageManager.MOB_ENEMY_IMAGE.getWidth()));
             int locationY = (int) (Math.random() * Main.WINDOW_HEIGHT * 0.05);
-
-            double rand = Math.random();
-            EnemyFactory factory;
-
-            if (rand < 0.4) {
-                factory = new MobEnemyFactory();
-            } else if (rand < 0.7) {
-                factory = new EliteEnemyFactory();
-            } else if (rand < 0.9) {
-                factory = new ElitePlusEnemyFactory();
-            } else {
-                factory = new EliteProEnemyFactory();
-            }
-
-            enemyAircrafts.add(factory.createEnemy(locationX, locationY));
+            enemyAircrafts.add(createRandomEnemy(locationX, locationY));
         }
+    }
+
+    private AbstractEnemy createBossEnemy() {
+        AbstractEnemy boss = new boss_enemy(
+                Main.WINDOW_WIDTH / 2,
+                Main.WINDOW_HEIGHT / 10,
+                1 + enemySpeedEnhance,
+                0,
+                getCurrentBossHp()
+        );
+        System.out.println("Boss generated! hp=" + getCurrentBossHp());
+        return boss;
+    }
+
+    private AbstractEnemy createRandomEnemy(int locationX, int locationY) {
+        double rand = Math.random();
+        EnemyFactory factory;
+        double eliteLine = mobProbability + eliteProbability;
+        double elitePlusLine = eliteLine + elitePlusProbability;
+
+        if (rand < mobProbability) {
+            factory = new MobEnemyFactory();
+        } else if (rand < eliteLine) {
+            factory = new EliteEnemyFactory();
+        } else if (rand < elitePlusLine) {
+            factory = new ElitePlusEnemyFactory();
+        } else {
+            factory = new EliteProEnemyFactory();
+        }
+
+        AbstractEnemy enemy = factory.createEnemy(locationX, locationY);
+        enemy.setSpeedY(enemy.getSpeedY() + enemySpeedEnhance);
+        enemy.setMaxHpAndHp(enemy.getMaxHp() + enemyHpEnhance);
+        return enemy;
     }
 
     protected String getDifficultyName() {
@@ -377,47 +525,19 @@ public class Game extends JPanel {
         return getDifficultyName() + "_records.txt";
     }
 
-    private void printRankList() {
-        ScoreRecordDao dao = new ScoreRecordDaoImpl(getRecordFileName());
-        List<ScoreRecord> records = dao.getAllRecords();
-
-        System.out.println("***************************************");
-        System.out.println("当前难度：" + getDifficultyName());
-        System.out.println("名次\t玩家名\t得分\t时间");
-
-        for (int i = 0; i < records.size(); i++) {
-            ScoreRecord record = records.get(i);
-            System.out.printf("%d\t%s\t%d\t%s%n",
-                    i + 1,
-                    record.getPlayerName(),
-                    record.getScore(),
-                    record.getTime());
-        }
-
-        System.out.println("***************************************");
-    }
-
     private void saveScoreRecord() {
         String playerName = JOptionPane.showInputDialog(this, "游戏结束！请输入玩家姓名：");
         if (playerName == null || playerName.trim().isEmpty()) {
             playerName = "匿名玩家";
         }
-
         String time = new SimpleDateFormat("MM-dd HH:mm").format(new Date());
-
         ScoreRecord record = new ScoreRecord(playerName, score, time);
         ScoreRecordDao dao = new ScoreRecordDaoImpl(getRecordFileName());
         dao.addRecord(record);
     }
 
     private void showScoreBoard() {
-        JFrame frame = new JFrame("排行榜");
-        frame.setSize(500, 600);
-        frame.setResizable(false);
-        frame.setLocationRelativeTo(null);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setContentPane(new ScoreBoard(getDifficultyName()));
-        frame.setVisible(true);
+        Main.showScoreBoard(getDifficultyName(), true);
     }
 
     private BufferedImage getBackgroundImage() {
@@ -433,4 +553,3 @@ public class Game extends JPanel {
         }
     }
 }
-

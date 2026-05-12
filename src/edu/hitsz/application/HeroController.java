@@ -23,6 +23,9 @@ public class HeroController {
             @Override
             public void mouseDragged(MouseEvent e) {
                 super.mouseDragged(e);
+                if (game.isPaused()) {
+                    return;
+                }
                 int x = e.getX();
                 int y = e.getY();
                 if ( x<0 || x>Main.WINDOW_WIDTH || y<0 || y>Main.WINDOW_HEIGHT){
