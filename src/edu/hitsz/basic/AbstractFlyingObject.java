@@ -100,8 +100,25 @@ public abstract class AbstractFlyingObject {
         this.locationY = (int) locationY;
     }
 
+    public int getSpeedX() {
+        return speedX;
+    }
+
     public int getSpeedY() {
         return speedY;
+    }
+
+    public void setSpeedX(int speedX) {
+        this.speedX = speedX;
+    }
+
+    public void setSpeedY(int speedY) {
+        this.speedY = speedY;
+    }
+
+    public void setSpeed(int speedX, int speedY) {
+        this.speedX = speedX;
+        this.speedY = speedY;
     }
 
     public BufferedImage getImage() {

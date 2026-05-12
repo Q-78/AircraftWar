@@ -40,7 +40,11 @@ public class MusicThread extends Thread {
                 }
                 Thread.sleep(50);
             }
+        } catch (InterruptedException e) {
+            // stopMusic() 主动 interrupt 线程时会进入这里，这是正常停止音乐，不是播放失败。
+            Thread.currentThread().interrupt();
         } catch (Exception e) {
+            // 只有真正的音频文件、格式或播放设备异常才打印错误。
             System.out.println("音频播放失败：" + filename);
             e.printStackTrace();
         } finally {

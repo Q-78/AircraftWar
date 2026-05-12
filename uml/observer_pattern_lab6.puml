@@ -1,0 +1,65 @@
+@startuml
+skinparam classAttributeIconSize 0
+title 观察者模式（Observer Pattern）- 炸弹/冰冻道具
+
+interface EffectObserver {
+  +onBomb(): void
+  +onFreeze(): void
+}
+
+abstract class AbstractProp {
+  -observers: List<EffectObserver>
+  +addObserver(observer: EffectObserver): void
+  +removeObserver(observer: EffectObserver): void
+  #notifyBombObservers(): void
+  #notifyFreezeObservers(): void
+  +activate(heroAircraft: HeroAircraft): void
+}
+
+class BombProp {
+  +activate(heroAircraft: HeroAircraft): void
+}
+
+class FreezeProp {
+  +activate(heroAircraft: HeroAircraft): void
+}
+
+abstract class AbstractEnemy {
+  +onBomb(): void
+  +onFreeze(): void
+  #freezePermanently(): void
+  #freezeTemporarily(durationMs: int): void
+  #slowTemporarily(ratio: double, durationMs: int): void
+}
+
+class MobEnemy
+class elite_Enemy
+class elitePlus_Enemy
+class elitePro_Enemy
+class boss_enemy
+abstract class BaseBullet
+
+AbstractProp o-- EffectObserver : observers
+AbstractProp <|-- BombProp
+AbstractProp <|-- FreezeProp
+EffectObserver <|.. AbstractEnemy
+EffectObserver <|.. BaseBullet
+AbstractEnemy <|-- MobEnemy
+AbstractEnemy <|-- elite_Enemy
+AbstractEnemy <|-- elitePlus_Enemy
+AbstractEnemy <|-- elitePro_Enemy
+AbstractEnemy <|-- boss_enemy
+
+note right of BombProp
+触发后通知所有敌机和敌机子弹：
+普通/精英/精锐坠毁；王牌掉血；
+Boss 不受影响；敌机子弹消失。
+end note
+
+note right of FreezeProp
+触发后通知所有敌机和敌机子弹：
+普通永久静止；精英4s恢复；
+精锐3s恢复；王牌减速5s恢复；
+Boss 不受影响；子弹静止5s恢复。
+end note
+@enduml

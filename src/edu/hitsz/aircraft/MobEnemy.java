@@ -18,4 +18,11 @@ public class MobEnemy extends AbstractEnemy {
     public AbstractProp dropProp() {
         return null;
     }
+
+    @Override
+    public void onFreeze() {
+        freezePermanently();
+        System.out.println("MobEnemy freezed permanently!");
+    }
 }
+

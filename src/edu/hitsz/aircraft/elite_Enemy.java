@@ -22,6 +22,12 @@ public class elite_Enemy extends AbstractEnemy {
     }
 
     @Override
+    public void onFreeze() {
+        freezeTemporarily(4000);
+        System.out.println("EliteEnemy freezed 4s!");
+    }
+
+    @Override
     public AbstractProp dropProp() {
         if (Math.random() >= 0.5) {
             return null;

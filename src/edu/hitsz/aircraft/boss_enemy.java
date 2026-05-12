@@ -31,6 +31,21 @@ public class boss_enemy extends AbstractEnemy {
     }
 
     @Override
+    public int getScoreValue() {
+        return 50;
+    }
+
+    @Override
+    public void onBomb() {
+        System.out.println("BossEnemy is immune to bomb!");
+    }
+
+    @Override
+    public void onFreeze() {
+        System.out.println("BossEnemy is immune to freeze!");
+    }
+
+    @Override
     public AbstractProp dropProp() {
         return null;
     }

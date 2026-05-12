@@ -17,8 +17,14 @@ public class ScoreBoard extends JPanel {
     private final ScoreRecordDao dao;
     private final DefaultTableModel model;
     private final JTable scoreTable;
+    private final Runnable restartAction;
 
     public ScoreBoard(String difficultyName) {
+        this(difficultyName, null);
+    }
+
+    public ScoreBoard(String difficultyName, Runnable restartAction) {
+        this.restartAction = restartAction;
         this.setLayout(new BorderLayout(10, 10));
 
         JLabel titleLabel = new JLabel("排行榜 - " + difficultyName.toUpperCase(), SwingConstants.CENTER);
@@ -37,8 +43,12 @@ public class ScoreBoard extends JPanel {
 
         JPanel bottomPanel = new JPanel();
         JButton deleteButton = new JButton("删除选中记录");
+        JButton restartButton = new JButton("重新选择难度");
         JButton closeButton = new JButton("关闭");
         bottomPanel.add(deleteButton);
+        if (restartAction != null) {
+            bottomPanel.add(restartButton);
+        }
         bottomPanel.add(closeButton);
         this.add(bottomPanel, BorderLayout.SOUTH);
 
@@ -46,12 +56,23 @@ public class ScoreBoard extends JPanel {
         refreshTable();
 
         deleteButton.addActionListener(e -> deleteSelectedRecord());
+        if (restartAction != null) {
+            restartButton.addActionListener(e -> restartGame());
+        }
         closeButton.addActionListener(e -> {
             Window window = SwingUtilities.getWindowAncestor(this);
             if (window != null) {
                 window.dispose();
             }
         });
+    }
+
+    private void restartGame() {
+        Window window = SwingUtilities.getWindowAncestor(this);
+        if (window != null) {
+            window.dispose();
+        }
+        restartAction.run();
     }
 
     private void refreshTable() {

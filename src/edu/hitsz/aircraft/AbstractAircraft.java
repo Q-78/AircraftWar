@@ -57,6 +57,11 @@ public abstract class AbstractAircraft extends AbstractFlyingObject {
         }
     }
 
+    public void setMaxHpAndHp(int hp) {
+        this.maxHp = hp;
+        this.hp = hp;
+    }
+
     public int getHp() {
         return hp;
     }

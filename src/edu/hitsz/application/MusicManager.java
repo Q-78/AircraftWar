@@ -14,7 +14,7 @@ public class MusicManager {
 
     private static MusicThread bgmThread;
     private static MusicThread bossBgmThread;
-
+·
     public static void playBgm() {
         if (bgmThread != null) {
             return;

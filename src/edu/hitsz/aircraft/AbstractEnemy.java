@@ -3,6 +3,7 @@ package edu.hitsz.aircraft;
 import edu.hitsz.application.Main;
 import edu.hitsz.bullet.BaseBullet;
 import edu.hitsz.prop.AbstractProp;
+import edu.hitsz.observer.EffectObserver;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -13,7 +14,7 @@ import java.util.List;
  *
  * @author hitsz
  */
-public abstract class AbstractEnemy extends AbstractAircraft {
+public abstract class AbstractEnemy extends AbstractAircraft implements EffectObserver {
 
     public AbstractEnemy(int locationX, int locationY, int speedX, int speedY, int hp) {
         super(locationX, locationY, speedX, speedY, hp);
@@ -37,6 +38,57 @@ public abstract class AbstractEnemy extends AbstractAircraft {
             res.add(prop);
         }
         return res;
+    }
+
+
+    public int getScoreValue() {
+        return 10;
+    }
+
+    @Override
+    public void onBomb() {
+        vanish();
+    }
+
+    @Override
+    public void onFreeze() {
+        freezeTemporarily(5000);
+    }
+
+    protected void freezePermanently() {
+        setSpeed(0, 0);
+    }
+
+    protected void freezeTemporarily(int durationMs) {
+        final int oldSpeedX = speedX;
+        final int oldSpeedY = speedY;
+        setSpeed(0, 0);
+        new Thread(() -> {
+            try {
+                Thread.sleep(durationMs);
+                if (!notValid()) {
+                    setSpeed(oldSpeedX, oldSpeedY);
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }, getClass().getSimpleName() + "-freeze-recover-thread").start();
+    }
+
+    protected void slowTemporarily(double ratio, int durationMs) {
+        final int oldSpeedX = speedX;
+        final int oldSpeedY = speedY;
+        setSpeed((int) Math.round(oldSpeedX * ratio), (int) Math.round(oldSpeedY * ratio));
+        new Thread(() -> {
+            try {
+                Thread.sleep(durationMs);
+                if (!notValid()) {
+                    setSpeed(oldSpeedX, oldSpeedY);
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }, getClass().getSimpleName() + "-slow-recover-thread").start();
     }
 
     /**
