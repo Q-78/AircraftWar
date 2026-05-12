@@ -37,6 +37,12 @@ public class ImageManager {
 
     public static BufferedImage BACKGROUND_IMAGE;
 
+    public static BufferedImage EASY_BACKGROUND_IMAGE;
+    public static BufferedImage NORMAL_BACKGROUND_IMAGE;
+    public static BufferedImage HARD_BACKGROUND_IMAGE;
+
+
+
     public static BufferedImage HERO_IMAGE;
 
     public static BufferedImage HERO_BULLET_IMAGE;
@@ -59,8 +65,9 @@ public class ImageManager {
         try {
 
             // 背景
-            BACKGROUND_IMAGE = ImageIO.read(new FileInputStream("src/images/bg.jpg"));
-
+            EASY_BACKGROUND_IMAGE = ImageIO.read(new FileInputStream("src/images/bg.jpg"));
+            NORMAL_BACKGROUND_IMAGE = ImageIO.read(new FileInputStream("src/images/bg2.jpg"));
+            HARD_BACKGROUND_IMAGE = ImageIO.read(new FileInputStream("src/images/bg3.jpg"));
             // 英雄机
             HERO_IMAGE = ImageIO.read(new FileInputStream("src/images/hero.png"));
 

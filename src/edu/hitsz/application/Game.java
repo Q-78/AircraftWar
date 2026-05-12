@@ -85,6 +85,8 @@ public class Game extends JPanel {
      */
     public void action() {
 
+        MusicManager.playBgm();
+
         // 定时任务：绘制、对象产生、碰撞判定、及结束判定
         TimerTask task = new TimerTask() {
             @Override
@@ -186,6 +188,7 @@ public class Game extends JPanel {
                     // 敌机损失一定生命值
                     enemyAircraft.decreaseHp(bullet.getPower());
                     bullet.vanish();
+                    MusicManager.playBulletHit();
                     if (enemyAircraft.notValid()) {
                         // TODO 获得分数，产生道具补给
                         score += 10;
@@ -210,6 +213,10 @@ public class Game extends JPanel {
             }
 
             if (heroAircraft.crash(prop) || prop.crash(heroAircraft)) {
+                MusicManager.playGetSupply();
+                if (prop instanceof BombProp) {
+                    MusicManager.playBombExplosion();
+                }
                 prop.activate(heroAircraft);
                 prop.vanish();
             }
@@ -222,30 +229,34 @@ public class Game extends JPanel {
      * 3. 删除无效的道具
      */
     private void postProcessAction() {
+        boolean hadBoss = hasBossEnemy();
+
         enemyBullets.removeIf(AbstractFlyingObject::notValid);
         heroBullets.removeIf(AbstractFlyingObject::notValid);
         enemyAircrafts.removeIf(AbstractFlyingObject::notValid);
         props.removeIf(AbstractFlyingObject::notValid);
+
+        if (hadBoss && !hasBossEnemy()) {
+            MusicManager.stopBossBgm();
+        }
     }
 
     /**
      * 检查游戏是否结束，若结束：关闭线程池
      */
     private void checkResultAction(){
-        // 游戏结束检查英雄机是否存活
-//        if (heroAircraft.getHp() <= 0) {
-//            timer.cancel(); // 取消定时器并终止所有调度任务
-//            gameOverFlag = true;
-//            System.out.println("Game Over!");
-//        }
         if (heroAircraft.getHp() <= 0 && !gameOverFlag) {
             timer.cancel();
             gameOverFlag = true;
 
             System.out.println("Game Over!");
+            MusicManager.stopAll();
+            MusicManager.playGameOver();
 
-            saveScoreRecord();
-            printRankList();
+            SwingUtilities.invokeLater(() -> {
+                saveScoreRecord();
+                showScoreBoard();
+            });
         }
 
     }
@@ -262,8 +273,9 @@ public class Game extends JPanel {
         super.paint(g);
 
         // 绘制背景,图片滚动
-        g.drawImage(ImageManager.BACKGROUND_IMAGE, 0, this.backGroundTop - Main.WINDOW_HEIGHT, null);
-        g.drawImage(ImageManager.BACKGROUND_IMAGE, 0, this.backGroundTop, null);
+        BufferedImage bg = getBackgroundImage();
+        g.drawImage(bg, 0, this.backGroundTop - Main.WINDOW_HEIGHT, null);
+        g.drawImage(bg, 0, this.backGroundTop, null);
         this.backGroundTop += 1;
         if (this.backGroundTop == Main.WINDOW_HEIGHT) {
             this.backGroundTop = 0;
@@ -322,6 +334,7 @@ public class Game extends JPanel {
         if (score >= nextBossScore && !hasBossEnemy()) {
             EnemyFactory bossFactory = new BossEnemyFactory();
             enemyAircrafts.add(bossFactory.createEnemy(Main.WINDOW_WIDTH / 2, Main.WINDOW_HEIGHT / 10));
+            MusicManager.playBossBgm();
             nextBossScore += bossScoreThreshold;
             return;
         }
@@ -348,7 +361,16 @@ public class Game extends JPanel {
     }
 
     protected String getDifficultyName() {
-        return "normal";
+        switch (GameConfig.difficulty) {
+            case EASY:
+                return "easy";
+            case NORMAL:
+                return "normal";
+            case HARD:
+                return "hard";
+            default:
+                return "normal";
+        }
     }
 
     private String getRecordFileName() {
@@ -376,12 +398,39 @@ public class Game extends JPanel {
     }
 
     private void saveScoreRecord() {
-        String playerName = "testUser";
+        String playerName = JOptionPane.showInputDialog(this, "游戏结束！请输入玩家姓名：");
+        if (playerName == null || playerName.trim().isEmpty()) {
+            playerName = "匿名玩家";
+        }
+
         String time = new SimpleDateFormat("MM-dd HH:mm").format(new Date());
 
         ScoreRecord record = new ScoreRecord(playerName, score, time);
         ScoreRecordDao dao = new ScoreRecordDaoImpl(getRecordFileName());
         dao.addRecord(record);
+    }
+
+    private void showScoreBoard() {
+        JFrame frame = new JFrame("排行榜");
+        frame.setSize(500, 600);
+        frame.setResizable(false);
+        frame.setLocationRelativeTo(null);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setContentPane(new ScoreBoard(getDifficultyName()));
+        frame.setVisible(true);
+    }
+
+    private BufferedImage getBackgroundImage() {
+        switch (GameConfig.difficulty) {
+            case EASY:
+                return ImageManager.EASY_BACKGROUND_IMAGE;
+            case NORMAL:
+                return ImageManager.NORMAL_BACKGROUND_IMAGE;
+            case HARD:
+                return ImageManager.HARD_BACKGROUND_IMAGE;
+            default:
+                return ImageManager.NORMAL_BACKGROUND_IMAGE;
+        }
     }
 }
 

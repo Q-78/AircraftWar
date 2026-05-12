@@ -15,6 +15,9 @@ public class HeroAircraft extends AbstractAircraft {
 
 // ================= 单例部分 =================
 
+    /** 火力道具效果结束时间，用于避免连续吃道具时前一个线程提前恢复火力 */
+    private volatile long fireEndTime = 0;
+
     // 唯一实例
     private static HeroAircraft instance;
 
@@ -33,9 +36,8 @@ public class HeroAircraft extends AbstractAircraft {
      * 初始化（只调用一次）
      */
     public static void init(int locationX, int locationY, int speedX, int speedY, int hp) {
-        if (instance == null) {
-            instance = new HeroAircraft(locationX, locationY, speedX, speedY, hp);
-        }
+        // 每开一局游戏都重新初始化，避免上一局 game over 后血量、位置和火力状态残留
+        instance = new HeroAircraft(locationX, locationY, speedX, speedY, hp);
     }
 
     /**
@@ -43,6 +45,14 @@ public class HeroAircraft extends AbstractAircraft {
      */
     public static HeroAircraft getInstance() {
         return instance;
+    }
+
+    public long getFireEndTime() {
+        return fireEndTime;
+    }
+
+    public void setFireEndTime(long fireEndTime) {
+        this.fireEndTime = fireEndTime;
     }
 
     @Override
