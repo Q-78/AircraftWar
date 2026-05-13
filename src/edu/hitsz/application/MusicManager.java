@@ -1,5 +1,9 @@
 package edu.hitsz.application;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+
 /**
  * 音频管理类：统一封装背景音乐、Boss 音乐和事件音效。
  */
@@ -14,7 +18,24 @@ public class MusicManager {
 
     private static MusicThread bgmThread;
     private static MusicThread bossBgmThread;
-·
+
+    /**
+     * 音效线程池：避免每次子弹命中都 new Thread，减少游戏过程中的瞬时卡顿。
+     */
+    private static final ExecutorService SOUND_EFFECT_EXECUTOR = Executors.newFixedThreadPool(3, new ThreadFactory() {
+        private int index = 1;
+
+        @Override
+        public Thread newThread(Runnable r) {
+            Thread thread = new Thread(r, "sound-effect-" + index++);
+            thread.setDaemon(true);
+            return thread;
+        }
+    });
+
+    private static long lastBulletHitTime = 0L;
+    private static final long BULLET_HIT_INTERVAL_MS = 80L;
+
     public static void playBgm() {
         if (bgmThread != null) {
             return;
@@ -46,19 +67,28 @@ public class MusicManager {
     }
 
     public static void playBulletHit() {
-        new MusicThread(BULLET_HIT).start();
+        long now = System.currentTimeMillis();
+        if (now - lastBulletHitTime < BULLET_HIT_INTERVAL_MS) {
+            return;
+        }
+        lastBulletHitTime = now;
+        playEffect(BULLET_HIT);
     }
 
     public static void playBombExplosion() {
-        new MusicThread(BOMB_EXPLOSION).start();
+        playEffect(BOMB_EXPLOSION);
     }
 
     public static void playGetSupply() {
-        new MusicThread(GET_SUPPLY).start();
+        playEffect(GET_SUPPLY);
     }
 
     public static void playGameOver() {
-        new MusicThread(GAME_OVER).start();
+        playEffect(GAME_OVER);
+    }
+
+    private static void playEffect(String filename) {
+        SOUND_EFFECT_EXECUTOR.execute(() -> new MusicThread(filename).run());
     }
 
     public static void stopAll() {

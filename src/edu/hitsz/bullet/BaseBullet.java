@@ -1,6 +1,7 @@
 package edu.hitsz.bullet;
 
 import edu.hitsz.application.Main;
+import edu.hitsz.application.EffectScheduler;
 import edu.hitsz.basic.AbstractFlyingObject;
 import edu.hitsz.observer.EffectObserver;
 
@@ -50,16 +51,11 @@ public abstract class BaseBullet extends AbstractFlyingObject implements EffectO
         final int oldSpeedX = speedX;
         final int oldSpeedY = speedY;
         setSpeed(0, 0);
-        new Thread(() -> {
-            try {
-                Thread.sleep(5000);
-                if (!notValid()) {
-                    setSpeed(oldSpeedX, oldSpeedY);
-                }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+        EffectScheduler.schedule(() -> {
+            if (!notValid()) {
+                setSpeed(oldSpeedX, oldSpeedY);
             }
-        }, "enemy-bullet-freeze-recover-thread").start();
+        }, 5000);
     }
 }
 
