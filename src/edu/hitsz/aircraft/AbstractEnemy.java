@@ -1,6 +1,7 @@
 package edu.hitsz.aircraft;
 
 import edu.hitsz.application.Main;
+import edu.hitsz.application.EffectScheduler;
 import edu.hitsz.bullet.BaseBullet;
 import edu.hitsz.prop.AbstractProp;
 import edu.hitsz.observer.EffectObserver;
@@ -63,32 +64,22 @@ public abstract class AbstractEnemy extends AbstractAircraft implements EffectOb
         final int oldSpeedX = speedX;
         final int oldSpeedY = speedY;
         setSpeed(0, 0);
-        new Thread(() -> {
-            try {
-                Thread.sleep(durationMs);
-                if (!notValid()) {
-                    setSpeed(oldSpeedX, oldSpeedY);
-                }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+        EffectScheduler.schedule(() -> {
+            if (!notValid()) {
+                setSpeed(oldSpeedX, oldSpeedY);
             }
-        }, getClass().getSimpleName() + "-freeze-recover-thread").start();
+        }, durationMs);
     }
 
     protected void slowTemporarily(double ratio, int durationMs) {
         final int oldSpeedX = speedX;
         final int oldSpeedY = speedY;
         setSpeed((int) Math.round(oldSpeedX * ratio), (int) Math.round(oldSpeedY * ratio));
-        new Thread(() -> {
-            try {
-                Thread.sleep(durationMs);
-                if (!notValid()) {
-                    setSpeed(oldSpeedX, oldSpeedY);
-                }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+        EffectScheduler.schedule(() -> {
+            if (!notValid()) {
+                setSpeed(oldSpeedX, oldSpeedY);
             }
-        }, getClass().getSimpleName() + "-slow-recover-thread").start();
+        }, durationMs);
     }
 
     /**

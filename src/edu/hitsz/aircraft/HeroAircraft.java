@@ -18,6 +18,9 @@ public class HeroAircraft extends AbstractAircraft {
     /** 火力道具效果结束时间，用于避免连续吃道具时前一个线程提前恢复火力 */
     private volatile long fireEndTime = 0;
 
+    /** 无敌冲刺结束时间，System.currentTimeMillis() 小于该值时英雄机免疫伤害 */
+    private volatile long invincibleEndTime = 0;
+
     // 唯一实例
     private static HeroAircraft instance;
 
@@ -53,6 +56,22 @@ public class HeroAircraft extends AbstractAircraft {
 
     public void setFireEndTime(long fireEndTime) {
         this.fireEndTime = fireEndTime;
+    }
+
+    public void activateInvincible(long durationMs) {
+        long endTime = System.currentTimeMillis() + durationMs;
+        if (endTime > invincibleEndTime) {
+            invincibleEndTime = endTime;
+        }
+    }
+
+    public boolean isInvincible() {
+        return System.currentTimeMillis() < invincibleEndTime;
+    }
+
+    public long getInvincibleRemainMs() {
+        long remain = invincibleEndTime - System.currentTimeMillis();
+        return Math.max(0, remain);
     }
 
     @Override

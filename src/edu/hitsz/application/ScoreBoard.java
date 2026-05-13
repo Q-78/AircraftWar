@@ -5,6 +5,7 @@ import edu.hitsz.dao.ScoreRecordDao;
 import edu.hitsz.dao.ScoreRecordDaoImpl;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.List;
@@ -25,11 +26,21 @@ public class ScoreBoard extends JPanel {
 
     public ScoreBoard(String difficultyName, Runnable restartAction) {
         this.restartAction = restartAction;
-        this.setLayout(new BorderLayout(10, 10));
+        this.setLayout(new BorderLayout(14, 14));
+        this.setBorder(BorderFactory.createEmptyBorder(18, 18, 18, 18));
+        this.setBackground(new Color(245, 247, 252));
 
-        JLabel titleLabel = new JLabel("排行榜 - " + difficultyName.toUpperCase(), SwingConstants.CENTER);
-        titleLabel.setFont(new Font("SansSerif", Font.BOLD, 24));
-        this.add(titleLabel, BorderLayout.NORTH);
+        JPanel titlePanel = new JPanel(new BorderLayout());
+        titlePanel.setOpaque(false);
+        JLabel titleLabel = new JLabel("排行榜", SwingConstants.CENTER);
+        titleLabel.setFont(new Font("Microsoft YaHei", Font.BOLD, 28));
+        titleLabel.setForeground(new Color(36, 52, 82));
+        JLabel subTitleLabel = new JLabel("当前难度：" + getChineseDifficultyName(difficultyName), SwingConstants.CENTER);
+        subTitleLabel.setFont(new Font("Microsoft YaHei", Font.PLAIN, 14));
+        subTitleLabel.setForeground(new Color(100, 112, 135));
+        titlePanel.add(titleLabel, BorderLayout.NORTH);
+        titlePanel.add(subTitleLabel, BorderLayout.SOUTH);
+        this.add(titlePanel, BorderLayout.NORTH);
 
         model = new DefaultTableModel(new Object[]{"名次", "玩家名", "得分", "时间"}, 0) {
             @Override
@@ -38,13 +49,25 @@ public class ScoreBoard extends JPanel {
             }
         };
         scoreTable = new JTable(model);
-        scoreTable.setRowHeight(28);
-        this.add(new JScrollPane(scoreTable), BorderLayout.CENTER);
+        scoreTable.setRowHeight(32);
+        scoreTable.setFont(new Font("Microsoft YaHei", Font.PLAIN, 14));
+        scoreTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        scoreTable.setShowGrid(false);
+        scoreTable.setIntercellSpacing(new Dimension(0, 0));
+        scoreTable.getTableHeader().setFont(new Font("Microsoft YaHei", Font.BOLD, 14));
+        scoreTable.getTableHeader().setBackground(new Color(55, 75, 110));
+        scoreTable.getTableHeader().setForeground(Color.WHITE);
+        scoreTable.setDefaultRenderer(Object.class, new ZebraRenderer());
 
-        JPanel bottomPanel = new JPanel();
-        JButton deleteButton = new JButton("删除选中记录");
-        JButton restartButton = new JButton("重新选择难度");
-        JButton closeButton = new JButton("关闭");
+        JScrollPane scrollPane = new JScrollPane(scoreTable);
+        scrollPane.setBorder(BorderFactory.createLineBorder(new Color(220, 226, 238)));
+        this.add(scrollPane, BorderLayout.CENTER);
+
+        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 4));
+        bottomPanel.setOpaque(false);
+        JButton deleteButton = createButton("删除选中记录", new Color(225, 96, 90));
+        JButton restartButton = createButton("重新选择难度", new Color(76, 135, 220));
+        JButton closeButton = createButton("关闭", new Color(95, 110, 130));
         bottomPanel.add(deleteButton);
         if (restartAction != null) {
             bottomPanel.add(restartButton);
@@ -65,6 +88,31 @@ public class ScoreBoard extends JPanel {
                 window.dispose();
             }
         });
+    }
+
+    private JButton createButton(String text, Color background) {
+        JButton button = new JButton(text);
+        button.setFont(new Font("Microsoft YaHei", Font.BOLD, 14));
+        button.setForeground(Color.WHITE);
+        button.setBackground(background);
+        button.setOpaque(true);
+        button.setBorderPainted(false);
+        button.setFocusPainted(false);
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        button.setPreferredSize(new Dimension(130, 34));
+        return button;
+    }
+
+    private String getChineseDifficultyName(String difficultyName) {
+        switch (difficultyName) {
+            case "easy":
+                return "简单模式";
+            case "hard":
+                return "困难模式";
+            case "normal":
+            default:
+                return "普通模式";
+        }
     }
 
     private void restartGame() {
@@ -105,6 +153,23 @@ public class ScoreBoard extends JPanel {
         if (result == JOptionPane.YES_OPTION) {
             dao.deleteRecord(row);
             refreshTable();
+        }
+    }
+
+    private static class ZebraRenderer extends DefaultTableCellRenderer {
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                                                       boolean hasFocus, int row, int column) {
+            Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            setHorizontalAlignment(column == 1 ? LEFT : CENTER);
+            if (isSelected) {
+                c.setBackground(new Color(205, 225, 255));
+                c.setForeground(new Color(20, 35, 60));
+            } else {
+                c.setBackground(row % 2 == 0 ? Color.WHITE : new Color(242, 246, 252));
+                c.setForeground(new Color(45, 55, 75));
+            }
+            return c;
         }
     }
 }
